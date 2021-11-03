@@ -4,11 +4,12 @@ import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import { Form } from "react-bootstrap";
 import outbox from "./outbox.png";
 import React, { useState, useRef } from "react";
+import { getDefaultNormalizer } from "@testing-library/react";
 
 function App({ value = "", onChange }) {
-  const baseURL = "https://instant-share.herokuapp.com";
+  // const baseURL = "https://instant-share.herokuapp.com";
 
-  // const baseURL = "http://localhost:5000";
+  const baseURL = "http://localhost:5000";
 
   const uploadURL = `${baseURL}/api/files`;
   const emailURL = `${baseURL}/api/files/send`;
@@ -68,36 +69,36 @@ function App({ value = "", onChange }) {
     console.log(url.split("/").splice(-1, 1)[0]);
     fileURL.value = url;
     setIsFile(true);
+  };
+  const emailId = useRef(null);
 
+  function submit(e) {
+    e.preventDefault();
+
+    console.log("INPUT VALUE: ", textAreaRef.current?.value);
+    // const url = fileURL.value;
     const formData = {
-      uuid: url.split("/").splice(-1, 1)[0],
-      emailTo: emailForm.elements["to-email"].value,
-      emailFrom: emailForm.elements["from-email"].value,
+      uuid: textAreaRef.current?.value.split("/").splice(-1, 1)[0],
+      emailTo: emailId.current?.value,
+      emailFrom: emailId.current?.value,
     };
+
     console.log(formData);
-  };
-
-  // const url = fileURL.value;
-  // const formData = {
-  //   uuid: url.split("/").splice(-1, 1)[0],
-  //   emailTo: emailForm.elements["to-email"].value,
-  //   emailFrom: emailForm.elements["from-email"].value,
-  // };
-
-  // console.log(formData);
-
-  const toast = document.querySelector(".toast");
-
-  let toastTimer;
-  // the toast function
-  const showToast = (msg) => {
-    clearTimeout(toastTimer);
-    toast.innerText = msg;
-    toast.classList.add("show");
-    toastTimer = setTimeout(() => {
-      toast.classList.remove("show");
-    }, 2000);
-  };
+    fetch(emailURL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          // showToast("Email Sent");
+          console.log(data);
+        }
+      });
+  }
 
   return (
     <div className="App">
@@ -121,12 +122,14 @@ function App({ value = "", onChange }) {
               ref={fileInput}
               onChange={changeHandler}
             />
-            <button
-              className="upload-btn"
-              onClick={() => fileInput.current.click()}
-            >
-              Choose File
-            </button>
+            <div className="generate">
+              <button
+                className="upload-btn"
+                onClick={() => fileInput.current.click()}
+              >
+                Choose File
+              </button>
+            </div>
             {isFilePicked ? (
               <div className="details">
                 <p>Filename: {selectedFile.name}</p>
@@ -143,7 +146,7 @@ function App({ value = "", onChange }) {
           </div>
 
           <div>
-            <div>
+            <div className="generate">
               <button onClick={handleSubmission}>Generate Link</button>
             </div>
           </div>
@@ -162,7 +165,7 @@ function App({ value = "", onChange }) {
                 /* Logical shortcut for only displaying the 
           button if the copy command exists */
                 document.queryCommandSupported("copy") && (
-                  <span>
+                  <span className="button">
                     <button onClick={copyToClipboard}>
                       <FontAwesomeIcon icon={faCopy} />
                     </button>
@@ -176,37 +179,35 @@ function App({ value = "", onChange }) {
           <p>Or Send via Email</p>
           <div className="email-container">
             <form id="emailForm">
-              <div className="filed">
-                {/* <label for="fromEmail">Sender's </label> */}
+              {/* <div className="filed">
                 <input
                   type="email"
                   autoComplete="email"
                   required
+                  ref={emailId}
                   name="from-email"
                   id="fromEmail"
                   placeholder="Sender Email"
                 />
-              </div>
+              </div> */}
 
               <div className="filed">
-                {/* <label for="toEmail">Receiver's</label> */}
                 <input
                   type="email"
                   required
+                  ref={emailId}
                   autoComplete="receiver"
                   name="to-email"
                   id="toEmail"
-                  placeholder="Receiver Email"
+                  placeholder="Type Receiver Email"
                 />
               </div>
-              <div className="send-btn-container">
-                <button type="submit">Send</button>
+              <div className=" generate">
+                <button onClick={submit}>Send</button>
               </div>
             </form>
           </div>
         </section>
-
-        <div className="toast">Sample message</div>
       </header>
     </div>
   );
